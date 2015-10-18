@@ -51,7 +51,10 @@ public class MovieCaptureJob implements Job
 
 	protected void captureMoviesList(CatelogModel catelogModel) {
 		String url = catelogModel.getStr("url");
-		
+		String suffix = ".html";
+		if(9 == catelogModel.getInt("id")){  //3D
+			suffix = ".htm";
+		}
 		Document doc = null;
 		try
 		{
@@ -95,7 +98,8 @@ public class MovieCaptureJob implements Job
 						continue;
 					}
 				}
-				doc = Jsoup.connect(url + "index_" + page + ".html").get();
+				
+				doc = Jsoup.connect(url + "index_" + page + suffix).get();
 			} catch (Exception e) {
 				error ++;
 				continue;
