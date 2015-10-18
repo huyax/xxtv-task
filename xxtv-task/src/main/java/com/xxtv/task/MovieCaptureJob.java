@@ -89,7 +89,7 @@ public class MovieCaptureJob implements Job
 						model.set("detailurl", detailurl);
 						model.set("icon", icon);
 						model.set("name", name);
-						model.set("catelog", cate);
+						model.set("catelog", cate == null?9:cate);
 						model.set("content", content);
 						model.set("pub_date", date);
 						model.set("cTime", new Date());
