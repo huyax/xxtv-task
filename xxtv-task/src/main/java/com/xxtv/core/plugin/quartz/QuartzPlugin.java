@@ -21,13 +21,14 @@ import org.slf4j.LoggerFactory;
 
 import com.jfinal.plugin.IPlugin;
 import com.xxtv.core.kit.ReflectKit;
-import com.xxtv.task.MovieCaptureJob;
+import com.xxtv.task.ImageCaptureJob;
+
 
 public class QuartzPlugin implements IPlugin
 {
 	private static final String	JOB		= "job";
 
-	private static final Logger	LOGGER	= LoggerFactory.getLogger(MovieCaptureJob.class);
+	private static final Logger	LOGGER	= LoggerFactory.getLogger(ImageCaptureJob.class);
 
 	private SchedulerFactory	schedulerFactory;
 

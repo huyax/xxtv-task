@@ -85,7 +85,7 @@ public class PictureCaptureJob implements Job{
 						PictureMapModel model = new PictureMapModel();
 						model.set("name", title);
 						model.set("catelogs", pictureCatelogModel.getInt("id"));
-						model.set("url",href);
+						model.set("url",url+href);
 						model.set("context",text);
 						model.save();
 						System.out.println(model.getStr("name")+"保存");
@@ -127,9 +127,5 @@ public class PictureCaptureJob implements Job{
 //			new CatelogModel().set("url", href.trim()).set("name", text.trim())
 //					.save();
 		}
-	}
-	public static void main(String[] args) {
-		final List<PictureCatelogModel> cates = PictureCatelogModel.dao.find("select * from picture_catelogs");
-		System.out.println(cates.size());
 	}
 }
