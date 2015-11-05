@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.chainsaw.Main;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -81,7 +82,7 @@ public class PictureCaptureJob implements Job{
 						Element a= eles.get(i).child(0);
 						String href = a.attr("href");
 						String title = a.attr("title");
-						String text =  eles.get(i).child(0).html();
+						String text =   eles.get(i).getElementsByTag("img").get(0).attr("data-original");
 						PictureMapModel model = new PictureMapModel();
 						model.set("name", title);
 						model.set("catelogs", pictureCatelogModel.getInt("id"));
@@ -121,11 +122,12 @@ public class PictureCaptureJob implements Job{
 			Element a= eles.get(i).child(0);
 			String href = a.attr("href");
 			String title = a.attr("title");
-			String text =  eles.get(i).child(0).html();
+			String text =  eles.get(i).getElementsByTag("img").get(0).attr("data-original");
 			System.out.println(text);
 
 //			new CatelogModel().set("url", href.trim()).set("name", text.trim())
 //					.save();
 		}
 	}
+
 }
