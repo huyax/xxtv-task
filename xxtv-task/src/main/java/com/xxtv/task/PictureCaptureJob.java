@@ -32,7 +32,7 @@ public class PictureCaptureJob implements Job{
 	
 	@Override
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
-		final List<PictureCatelogModel> cates = PictureCatelogModel.dao.find("select * from picture_catelogs");
+		final List<PictureCatelogModel> cates = PictureCatelogModel.dao.find("select * from picture_catelogs where id = 9");
 		for (int i = 0; i < cates.size(); i++)
 		{
 			cateMap.put(cates.get(i).getStr("name"), cates.get(i).getInt("id"));
@@ -86,7 +86,7 @@ public class PictureCaptureJob implements Job{
 						PictureMapModel model = new PictureMapModel();
 						model.set("name", title);
 						model.set("catelogs", pictureCatelogModel.getInt("id"));
-						model.set("url",url+href);
+						model.set("url","http://www.youzi4.com"+href);
 						model.set("context",text);
 						model.save();
 						System.out.println(model.getStr("name")+"保存");
@@ -108,26 +108,29 @@ public class PictureCaptureJob implements Job{
 	}
 	
 	private static void captureCatelogs() {
-		String url = "http://www.youzi4.com/xingganmeinv/list_2_1.html";
-		Document doc = null;
-		try {
-			doc = Jsoup.connect(url).get();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		Elements eles = doc.getElementsByClass("clearfix").get(5).getElementsByTag("li");
-		System.out.println(eles.size());
-		for (int i = 0; i < eles.size(); i++) {
-			Element a= eles.get(i).child(0);
-			String href = a.attr("href");
-			String title = a.attr("title");
-			String text =  eles.get(i).getElementsByTag("img").get(0).attr("data-original");
-			System.out.println(text);
+//		String url = "http://www.youzi4.com/xingganmeinv/list_2_1.html";
+//		Document doc = null;
+//		try {
+//			doc = Jsoup.connect(url).get();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//
+//		Elements eles = doc.getElementsByClass("clearfix").get(5).getElementsByTag("li");
+//		System.out.println(eles.size());
+//		for (int i = 0; i < eles.size(); i++) {
+//			Element a= eles.get(i).child(0);
+//			String href = a.attr("href");
+//			String title = a.attr("title");
+//			String text =  eles.get(i).getElementsByTag("img").get(0).attr("data-original");
+//			System.out.println(text);
 
 //			new CatelogModel().set("url", href.trim()).set("name", text.trim())
 //					.save();
-		}
+//		}
 	}
+//	public static void main(String[] args) {
+//		
+//	}
 
 }
