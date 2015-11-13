@@ -16,6 +16,7 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.jfinal.plugin.activerecord.Db;
 import com.xxtv.tools.DateTools;
 import com.xxtv.web.model.CatelogModel;
 import com.xxtv.web.model.MovieModel;
@@ -52,7 +53,7 @@ public class MovieCaptureJob implements Job
 	protected void captureMoviesList(CatelogModel catelogModel) {
 		String url = catelogModel.getStr("url");
 		String suffix = ".html";
-		if(9 == catelogModel.getInt("id")){  //3D
+		if(7 < catelogModel.getInt("id") ){  
 			suffix = ".htm";
 		}
 		Document doc = null;
@@ -66,7 +67,7 @@ public class MovieCaptureJob implements Job
 		}
 		int page = 1;
 		int error = 1;
-		while (doc != null) {
+		while (doc != null && page < 4) {
 			if(error > 5){
 				break;
 			}
@@ -84,6 +85,7 @@ public class MovieCaptureJob implements Job
 						Integer cate = cateMap.get(listInfo.get(1).text().substring(3).trim());
 						Date date = DateTools.parseDate(listInfo.get(2).text().substring(3).trim(), DateTools.yyyy_MM_dd);
 						String content = getContent(detailurl);
+						content = content.replace("#ffffbb", "#0f0f0f");
 						MovieModel model = new MovieModel();
 						model.set("icon", icon);
 						model.set("detailurl", detailurl);
@@ -93,7 +95,10 @@ public class MovieCaptureJob implements Job
 						model.set("content", content);
 						model.set("pub_date", date);
 						model.set("cTime", new Date());
-						model.save();
+						long count = Db.queryLong("select count(0) from movie where catelog=? and name=?",model.getInt("catelog"),model.getStr("name"));
+						if(count < 1){
+							model.save();
+						}
 					} catch (Exception e) {
 						continue;
 					}
@@ -128,15 +133,12 @@ public class MovieCaptureJob implements Job
 		Elements eles = doc.getElementsByClass("menutv").get(0).child(0)
 				.getElementsByTag("li");
 		for (int i = 0; i < eles.size(); i++) {
-
 			String href = eles.get(i).child(0).attr("href");
 			String text = eles.get(i).child(0).text();
 			if ("首页".equals(text)) {
 				continue;
 			}
-
-			new CatelogModel().set("url", href.trim()).set("name", text.trim())
-					.save();
+			new CatelogModel().set("url", href.trim()).set("name", text.trim()).save();
 		}
 
 	}
