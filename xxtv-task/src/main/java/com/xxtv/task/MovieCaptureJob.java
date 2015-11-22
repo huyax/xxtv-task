@@ -68,6 +68,9 @@ public class MovieCaptureJob implements Job
 		int page = 1;
 		int error = 1;
 		while (doc != null && page < 4) {
+			if(catelogModel.getInt("id") == 16){
+				System.out.println("动画片");
+			}
 			if(error > 5){
 				break;
 			}
@@ -98,6 +101,8 @@ public class MovieCaptureJob implements Job
 						long count = Db.queryLong("select count(0) from movie where catelog=? and name=?",model.getInt("catelog"),model.getStr("name"));
 						if(count < 1){
 							model.save();
+						}else{
+							Db.update("update movie set content=? where catelog=? and name=?",content,model.getInt("catelog"),model.getStr("name"));
 						}
 					} catch (Exception e) {
 						continue;
