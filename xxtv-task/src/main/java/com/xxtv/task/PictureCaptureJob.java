@@ -17,6 +17,11 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.jfinal.plugin.activerecord.Db;
+import com.jfinal.plugin.activerecord.Record;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCursor;
+import com.xxtv.core.kit.MongoKit;
 import com.xxtv.web.model.PictureCatelogModel;
 import com.xxtv.web.model.PictureMapModel;
 
@@ -26,41 +31,47 @@ import com.xxtv.web.model.PictureMapModel;
  *
  */
 public class PictureCaptureJob implements Job{
-	
-	private static final Logger	LOGGER	= LoggerFactory.getLogger(MovieCaptureJob.class);
-	private static Map<String,Integer> cateMap = new HashMap<String,Integer>();
+
+	private static Map<Integer,String> cateMap = new HashMap<Integer,String>();
 	
 	@Override
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
-		final List<PictureCatelogModel> cates = PictureCatelogModel.dao.find("select * from picture_catelogs where id = 9");
-		for (int i = 0; i < cates.size(); i++)
-		{
-			cateMap.put(cates.get(i).getStr("name"), cates.get(i).getInt("id"));
-		}
-		for (int i = 0; i < cates.size(); i++)
+		List<Record> records = MongoKit.findAll("picture_catelogs");
+		
+		cateMap.put(0, "list_2_");
+		cateMap.put(1, "list_6_");
+		cateMap.put(2, "list_3_");
+		cateMap.put(3, "list_4_");
+		cateMap.put(4, "list_5_");
+		cateMap.put(5, "list_1_");
+		cateMap.put(6, "list_7_");
+		cateMap.put(7, "list_12_");
+		
+		for (int i = 0; i < records.size(); i++)
 		{
 			final int index = i;
-			LOGGER.debug(cates.get(i).getStr("name") + " 分类启动线程开始抓取 -----------------------------------");
-			new Thread(new Runnable()
-			{
-				@Override
-				public void run()
-				{
-					capturePictureList(cates.get(index));
-				}
-			}).start();
+			final String name = records.get(i).getStr("name");
+			final String url = records.get(i).getStr("url");
+			capturePictureList(name,url,index);
+//			new Thread(new Runnable()
+//			{
+//				@Override
+//				public void run()
+//				{
+//					capturePictureList(name,url,index);
+//				}
+//			}).start();
 			
 		}
 		
 	}
 	
-	protected static void capturePictureList(PictureCatelogModel pictureCatelogModel) {
-		String url = pictureCatelogModel.getStr("url");
+	protected static void capturePictureList(String name,String url,int j) {
 		String suffix = ".html";
 		Document doc = null;
 		try
 		{
-			doc = Jsoup.connect(url+"1"+suffix).get();
+			doc = Jsoup.connect(url).get();
 		}
 		catch (IOException e)
 		{
@@ -77,33 +88,48 @@ public class PictureCaptureJob implements Job{
 				for (int i = 0; i < eles.size(); i++)
 				{
 					try {
-						System.out.println(pictureCatelogModel.getStr("name")+"第"+(page-1)+"页开始处理:");
-						LOGGER.debug(pictureCatelogModel.getStr("name") + " 第" + (page-1) + "页数据处理 -----------------------------------");
+						System.out.println(j+1 +"---"+name + " 第" + (page-1) + "页数据处理 -----------------------------------");
 						Element a= eles.get(i).child(0);
 						String href = a.attr("href");
 						String title = a.attr("title");
-						String text =   eles.get(i).getElementsByTag("img").get(0).attr("data-original");
-						PictureMapModel model = new PictureMapModel();
-						model.set("name", title);
-						model.set("catelogs", pictureCatelogModel.getInt("id"));
-						model.set("url","http://www.youzi4.com"+href);
-						model.set("context",text);
-						model.save();
-						System.out.println(model.getStr("name")+"保存");
+						String text =   eles.get(i).getElementsByTag("img").get(0).attr("data-original");						
+						Map<String, Object> filter = new HashMap<String, Object>();
+						filter.put("catelogs", j+1);
+						filter.put("name", title);
+						List<Record> r = MongoKit.findByCondition("picture_map",filter);
+						
+						Record record = new Record();
+						record.set("name", title);
+						record.set("catelogs", j+1);
+						record.set("url","http://www.youzi4.com"+href);
+						record.set("context",text);						
+						if(r.size() < 1){
+							DBCursor cursor=MongoKit.getCollection("picture_map").find().sort(new BasicDBObject("$natural",-1)).limit(1); 
+							if(cursor.hasNext()){  
+								record.set("_id", Integer.parseInt(cursor.next().get("_id").toString())+1);  
+					        }else{  
+					        	record.set("_id", 1);  
+					        }
+							MongoKit.save("picture_map", record);							
+						}else{
+							MongoKit.updateFirst("picture_map", filter, record);
+						}
 					} catch (Exception e) {
+						e.printStackTrace();
 						continue;
 					}
 				}
 				
-				doc = Jsoup.connect(url + page + suffix).get();
+				doc = Jsoup.connect(url + cateMap.get(j)+ page + suffix).get();
 				page ++;
 			} catch (Exception e) {
+				e.printStackTrace();
 				error ++;
 				continue;
 			}
 		}
 		
-		LOGGER.debug(pictureCatelogModel.getStr("name") + " 任务完成  -----------------------------------");
+		System.out.println(j+1 +"---"+name + " 任务完成  -----------------------------------");
 		
 	}
 	

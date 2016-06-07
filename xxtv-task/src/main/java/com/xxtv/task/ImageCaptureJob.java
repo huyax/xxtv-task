@@ -12,16 +12,20 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.jfinal.plugin.activerecord.Db;
+import com.jfinal.plugin.activerecord.Record;
+import com.xxtv.core.kit.MongoKit;
 import com.xxtv.web.model.PictureMapModel;
 import com.xxtv.web.model.PictureModel;
 
 public class ImageCaptureJob implements Job{
+
 	
 	private static final Logger	LOGGER	= LoggerFactory.getLogger(MovieCaptureJob.class);
 	
 	@Override
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
-		final List<PictureMapModel> cates = PictureMapModel.dao.find("select * from picture_map where id >= 5843 ");
+		final List<PictureMapModel> cates = PictureMapModel.dao.find("select * from picture_map  ");
 		for (int i = 0; i < cates.size(); i++)
 		{
 			int index = i;
@@ -44,7 +48,7 @@ public class ImageCaptureJob implements Job{
 					doc = Jsoup.connect(newUrl + "_"+ page + suffix).get();
 				}
 				
-						System.out.println(pictureMapModel.getStr("name") + " 第" + page + "页数据处理 -----------------------------------");						
+												
 						Element name = doc.getElementsByClass("picinfo").get(0).getElementsByTag("h2").get(0);
 						Element nowPage = doc.getElementsByClass("nowpage").get(0);
 //						Element totalpage = doc.getElementsByClass("totalpage").get(0);
@@ -55,7 +59,16 @@ public class ImageCaptureJob implements Job{
 						model.set("seat", nowPage.text());
 						model.set("url",img.attr("data-original"));	
 						model.set("map_id",pictureMapModel.getInt("id"));
-						model.save();												
+						long count = Db.queryLong("select count(0) from picture where map_id=? and name=?",model.getInt("map_id"),model.getStr("name"));
+						if(count < 1){
+						model.save();
+						Record record = new Record();
+						record.setColumns(model);
+						MongoKit.save("picture", record);
+						
+						System.out.println(pictureMapModel.getStr("name") + " 第" + page + "页数据处理 -----------------------------------");
+						}
+						
 				       page ++;	
 			} catch (Exception e) {
 				error ++;

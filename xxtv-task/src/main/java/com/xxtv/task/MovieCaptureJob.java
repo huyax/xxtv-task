@@ -16,10 +16,13 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.jfinal.plugin.activerecord.Db;
+import com.jfinal.plugin.activerecord.Page;
+import com.jfinal.plugin.activerecord.Record;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCursor;
+import com.xxtv.core.kit.MongoKit;
 import com.xxtv.tools.DateTools;
 import com.xxtv.web.model.CatelogModel;
-import com.xxtv.web.model.MovieModel;
 
 public class MovieCaptureJob implements Job
 {
@@ -28,37 +31,61 @@ public class MovieCaptureJob implements Job
 
 	@Override
 	public void execute(JobExecutionContext arg0) throws JobExecutionException
-	{
-		final List<CatelogModel> cates = CatelogModel.dao.find("select * from catelogs");
-		for (int i = 0; i < cates.size(); i++)
-		{
-			cateMap.put(cates.get(i).getStr("name"), cates.get(i).getInt("id"));
-		}
-		for (int i = 0; i < cates.size(); i++)
-		{
-			final int index = i;
-			LOGGER.debug(cates.get(i).getStr("name") + " 分类启动线程开始抓取 -----------------------------------");
-			new Thread(new Runnable()
+	{	
+//		final List<CatelogModel> cates = CatelogModel.dao.find("select * from catelogs");
+//		for (int i = 0; i < cates.size(); i++)
+//		{
+//			cateMap.put(cates.get(i).getStr("name"), cates.get(i).getInt("id"));
+//		}
+//		for (int i = 0; i < cates.size(); i++)
+//		{
+//			final int index = i;
+//			LOGGER.debug(cates.get(i).getStr("name") + " 分类启动线程开始抓取 -----------------------------------");
+//			new Thread(new Runnable()
+//			{
+//				@Override
+//				public void run()
+//				{
+//					captureMoviesList(cates.get(index));
+//				}
+//			}).start();
+//			
+//		}
+		//mongodb版
+		List<Record> records = MongoKit.findAll("catelogs");
+		for (int i = 0; i < records.size(); i++)
 			{
-				@Override
-				public void run()
+				cateMap.put(records.get(i).getStr("name"), records.get(i).getInt("_id"));
+			}
+
+		for (int i = 0; i < records.size(); i++)
+			{
+				final String name = records.get(i).getStr("name");
+				final String url = records.get(i).getStr("url");
+				final int _id = records.get(i).getInt("_id");			
+				LOGGER.debug(records.get(i).getStr("name") + " 分类启动线程开始抓取 -----------------------------------");
+				new Thread(new Runnable()
 				{
-					captureMoviesList(cates.get(index));
-				}
-			}).start();
-			
-		}
+					@Override
+					public void run()
+					{	
+						captureMoviesList(name,url,_id);
+					}
+				}).start();
+				
+			}
 	}
 
-	protected void captureMoviesList(CatelogModel catelogModel) {
-		String url = catelogModel.getStr("url");
+	protected void captureMoviesList(String name,String url,int _id) {
+		
 		String suffix = ".html";
-		if(7 < catelogModel.getInt("id") ){  
+		if(7 < _id ){  
 			suffix = ".htm";
 		}
 		Document doc = null;
 		try
 		{
+			
 			doc = Jsoup.connect(url).get();
 		}
 		catch (IOException e)
@@ -67,8 +94,8 @@ public class MovieCaptureJob implements Job
 		}
 		int page = 1;
 		int error = 1;
-		while (doc != null && page < 4) {
-			if(catelogModel.getInt("id") == 16){
+		while (doc != null) {
+			if(_id == 16){
 				System.out.println("动画片");
 			}
 			if(error > 5){
@@ -80,31 +107,41 @@ public class MovieCaptureJob implements Job
 				for (int i = 0; i < eles.size(); i++)
 				{
 					try {
-						LOGGER.debug(catelogModel.getStr("name") + " 第" + (page-1) + "页数据处理 -----------------------------------");
+						System.out.println(_id+"-----"+name + " 第" + (page-1) + "页数据处理 -----------------------------------");
 						String detailurl = eles.get(i).child(0).child(0).attr("href");
 						String icon = eles.get(i).child(0).child(0).child(0).attr("src");
 						Elements listInfo = eles.get(i).child(1).getElementsByTag("p");
-						String name = listInfo.get(0).text().substring(3).trim();
+						String name2 = listInfo.get(0).text().substring(3).trim();
 						Integer cate = cateMap.get(listInfo.get(1).text().substring(3).trim());
 						Date date = DateTools.parseDate(listInfo.get(2).text().substring(3).trim(), DateTools.yyyy_MM_dd);
 						String content = getContent(detailurl);
 						content = content.replace("#ffffbb", "#0f0f0f");
-						MovieModel model = new MovieModel();
-						model.set("icon", icon);
-						model.set("detailurl", detailurl);
-						model.set("icon", icon);
-						model.set("name", name);
-						model.set("catelog", cate == null?9:cate);
-						model.set("content", content);
-						model.set("pub_date", date);
-						model.set("cTime", new Date());
-						long count = Db.queryLong("select count(0) from movie where catelog=? and name=?",model.getInt("catelog"),model.getStr("name"));
-						if(count < 1){
-							model.save();
+						Map<String, Object> filter = new HashMap<String, Object>();
+						filter.put("catelog", cate);
+						filter.put("name", name2);
+						List<Record> r = MongoKit.findByCondition("movie",filter);
+						
+						Record record = new Record();
+						record.set("icon", icon);
+						record.set("detailurl", detailurl);
+						record.set("name", name2);
+						record.set("catelog", cate == null?9:cate);
+						record.set("content", content);
+						record.set("pub_date", date);
+						record.set("cTime", new Date());						
+						if(r.size() < 1){
+							DBCursor cursor=MongoKit.getCollection("movie").find().sort(new BasicDBObject("$natural",-1)).limit(1); 
+							if(cursor.hasNext()){  
+								record.set("_id", Integer.parseInt(cursor.next().get("_id").toString())+1);  
+					        }else{  
+					        	record.set("_id", 1);  
+					        }
+							MongoKit.save("movie", record);							
 						}else{
-							Db.update("update movie set content=? where catelog=? and name=?",content,model.getInt("catelog"),model.getStr("name"));
+							MongoKit.updateFirst("movie", filter, record);
 						}
 					} catch (Exception e) {
+						e.printStackTrace();
 						continue;
 					}
 				}
@@ -116,7 +153,7 @@ public class MovieCaptureJob implements Job
 			}
 		}
 
-		LOGGER.debug(catelogModel.getStr("name") + " 任务完成  -----------------------------------");
+		System.out.println(name + " 任务完成  -----------------------------------");
 		
 	}
 
@@ -126,26 +163,5 @@ public class MovieCaptureJob implements Job
 		return e.html();
 	}
 
-	private static void captureCatelogs() {
-		String url = "http://www.66ys.tv/";
-		Document doc = null;
-		try {
-			doc = Jsoup.connect(url).get();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		Elements eles = doc.getElementsByClass("menutv").get(0).child(0)
-				.getElementsByTag("li");
-		for (int i = 0; i < eles.size(); i++) {
-			String href = eles.get(i).child(0).attr("href");
-			String text = eles.get(i).child(0).text();
-			if ("首页".equals(text)) {
-				continue;
-			}
-			new CatelogModel().set("url", href.trim()).set("name", text.trim()).save();
-		}
-
-	}
 
 }

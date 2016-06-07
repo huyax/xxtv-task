@@ -1,8 +1,5 @@
 package com.xxtv.core.config;
 
-import org.beetl.core.GroupTemplate;
-import org.beetl.ext.jfinal.BeetlRenderFactory;
-
 import com.jfinal.config.Constants;
 import com.jfinal.config.Handlers;
 import com.jfinal.config.Interceptors;
@@ -14,6 +11,7 @@ import com.jfinal.plugin.druid.DruidPlugin;
 import com.jfinal.plugin.ehcache.EhCachePlugin;
 import com.jfinal.render.ViewType;
 import com.xxtv.core.plugin.annotation.TablePlugin;
+import com.xxtv.core.plugin.mongodb.MongodbPlugin;
 import com.xxtv.core.plugin.quartz.QuartzPlugin;
 import com.xxtv.core.plugin.sqlxml.SqlXmlPlugin;
 import com.xxtv.tools.DevConstants;
@@ -60,20 +58,22 @@ public class SystemConfig extends JFinalConfig
 
 		// 配置缓存
 		me.add(new EhCachePlugin());
-
+		
+		//mongodb
+		me.add(new MongodbPlugin(getProperty("mongodbUrl"),Integer.parseInt(getProperty("mongodbPort")),getProperty("mongodbName")));
 		// 配置druid数据库连接池插件
-		DruidPlugin druidPlugin = new DruidPlugin(getProperty("jdbcUrl"), getProperty("user"), getProperty("password"));
-		druidPlugin.setInitialSize(getPropertyToInt("initialSize", 10));
-		druidPlugin.setMinIdle(getPropertyToInt("minIdle", 10));
-		druidPlugin.setMaxActive(getPropertyToInt("maxActive", 100));
-		me.add(druidPlugin);
-
-		// 配置ActiveRecord插件
-		ActiveRecordPlugin arp = new ActiveRecordPlugin(druidPlugin);
-		arp.setShowSql(SysConstants.DEBUG);
-		me.add(arp);
-		// 自动扫描bean和数据库表映射
-		new TablePlugin(arp).start();
+//		DruidPlugin druidPlugin = new DruidPlugin(getProperty("jdbcUrl"), getProperty("user"), getProperty("password"));
+//		druidPlugin.setInitialSize(getPropertyToInt("initialSize", 10));
+//		druidPlugin.setMinIdle(getPropertyToInt("minIdle", 10));
+//		druidPlugin.setMaxActive(getPropertyToInt("maxActive", 100));
+//		me.add(druidPlugin);
+//
+//		// 配置ActiveRecord插件
+//		ActiveRecordPlugin arp = new ActiveRecordPlugin(druidPlugin);
+//		arp.setShowSql(SysConstants.DEBUG);
+//		me.add(arp);
+//		// 自动扫描bean和数据库表映射
+//		new TablePlugin(arp).start();
 
 	}
 

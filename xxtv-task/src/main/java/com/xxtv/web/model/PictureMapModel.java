@@ -13,7 +13,7 @@ import com.xxtv.core.plugin.annotation.Table;
  */
 @SuppressWarnings("serial")
 @Table(tableName = "picture_map")
-public class PictureMapModel extends Model<PictureMapModel>{
+public class PictureMapModel extends Model<PictureMapModel> {
 	private static final Logger			LOGGER	= LoggerFactory.getLogger(PictureMapModel.class);
 
 	public static final PictureMapModel	dao		= new PictureMapModel();

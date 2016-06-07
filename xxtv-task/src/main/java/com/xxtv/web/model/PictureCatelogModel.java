@@ -13,7 +13,7 @@ import com.xxtv.core.plugin.annotation.Table;
  */
 @SuppressWarnings("serial")
 @Table(tableName = "picture_catelogs")
-public class PictureCatelogModel extends Model<PictureCatelogModel>{
+public class PictureCatelogModel extends Model<PictureCatelogModel>  {
 	private static final Logger	LOGGER	= LoggerFactory.getLogger(PictureCatelogModel.class);
 
 	public static final PictureCatelogModel dao	= new PictureCatelogModel();
