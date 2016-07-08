@@ -32,25 +32,6 @@ public class MovieCaptureJob implements Job
 	@Override
 	public void execute(JobExecutionContext arg0) throws JobExecutionException
 	{	
-//		final List<CatelogModel> cates = CatelogModel.dao.find("select * from catelogs");
-//		for (int i = 0; i < cates.size(); i++)
-//		{
-//			cateMap.put(cates.get(i).getStr("name"), cates.get(i).getInt("id"));
-//		}
-//		for (int i = 0; i < cates.size(); i++)
-//		{
-//			final int index = i;
-//			LOGGER.debug(cates.get(i).getStr("name") + " 分类启动线程开始抓取 -----------------------------------");
-//			new Thread(new Runnable()
-//			{
-//				@Override
-//				public void run()
-//				{
-//					captureMoviesList(cates.get(index));
-//				}
-//			}).start();
-//			
-//		}
 		//mongodb版
 		List<Record> records = MongoKit.findAll("catelogs");
 		for (int i = 0; i < records.size(); i++)
@@ -64,18 +45,20 @@ public class MovieCaptureJob implements Job
 				final String url = records.get(i).getStr("url");
 				final int _id = records.get(i).getInt("_id");			
 				LOGGER.debug(records.get(i).getStr("name") + " 分类启动线程开始抓取 -----------------------------------");
-				new Thread(new Runnable()
-				{
-					@Override
-					public void run()
-					{	
-						captureMoviesList(name,url,_id);
-					}
-				}).start();
 				
-			}
+				captureMoviesList(name,url,_id);
+//				new Thread(new Runnable()
+//				{
+//					@Override
+//					public void run()
+//					{	
+//						captureMoviesList(name,url,_id);
+//					}
+//				}).start();
+//				
+//			}
 	}
-
+	}
 	protected void captureMoviesList(String name,String url,int _id) {
 		
 		String suffix = ".html";
@@ -94,7 +77,7 @@ public class MovieCaptureJob implements Job
 		}
 		int page = 1;
 		int error = 1;
-		while (doc != null) {
+		while (doc != null && page < 2) {
 			if(_id == 16){
 				System.out.println("动画片");
 			}
